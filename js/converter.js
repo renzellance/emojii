@@ -19,6 +19,66 @@ export const LINE_HEIGHTS = { compact: 1.15, normal: 1.45, roomy: 1.7 };
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
+// Separate small canvas for analysing the image (background crop detection).
+const acanvas = document.createElement('canvas');
+const actx = acanvas.getContext('2d', { willReadFrequently: true });
+
+// Find the bounding box of the subject by treating pixels close to the corner
+// colour (or transparent) as background. Product shots with big plain margins
+// then fill the grid instead of wasting it on empty space. Returns a source
+// crop rectangle; falls back to the whole image when there's no clear margin.
+function computeCrop(source, w, h) {
+  const AW = Math.min(200, w);
+  const scale = AW / w;
+  const AH = Math.max(1, Math.round(h * scale));
+  acanvas.width = AW;
+  acanvas.height = AH;
+  actx.clearRect(0, 0, AW, AH);
+  actx.drawImage(source, 0, 0, AW, AH);
+  const d = actx.getImageData(0, 0, AW, AH).data;
+
+  const corners = [0, AW - 1, (AH - 1) * AW, (AH - 1) * AW + (AW - 1)];
+  let br = 0, bg = 0, bb = 0;
+  for (const c of corners) {
+    br += d[c * 4];
+    bg += d[c * 4 + 1];
+    bb += d[c * 4 + 2];
+  }
+  br /= 4; bg /= 4; bb /= 4;
+
+  const TOL = 32 * 32 * 3; // ~32 per channel
+  const isBg = (i) => {
+    if (d[i + 3] < 24) return true;
+    const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
+    return dr * dr + dg * dg + db * db < TOL;
+  };
+
+  let minX = AW, minY = AH, maxX = -1, maxY = -1;
+  for (let y = 0; y < AH; y++) {
+    for (let x = 0; x < AW; x++) {
+      if (!isBg((y * AW + x) * 4)) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < minX) return { sx: 0, sy: 0, sw: w, sh: h }; // all background
+
+  const pad = Math.round(Math.max(AW, AH) * 0.03);
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(AW - 1, maxX + pad);
+  maxY = Math.min(AH - 1, maxY + pad);
+  return {
+    sx: minX / scale,
+    sy: minY / scale,
+    sw: (maxX - minX + 1) / scale,
+    sh: (maxY - minY + 1) / scale,
+  };
+}
+
 // Calibrated palettes are cached so we only sample the emoji font once.
 const calCache = new Map();
 function getPalette(name) {
@@ -67,7 +127,8 @@ export function imageToEmoji(source, opts) {
     cols = 32,
     mode = 'mosaic',
     palette = 'squares',
-    dither = true,
+    dither = false,
+    trim = true,
     autoContrast = true,
     invert = false,
     spacing = 'normal',
@@ -76,7 +137,8 @@ export function imageToEmoji(source, opts) {
 
   const w = source.width || source.naturalWidth;
   const h = source.height || source.naturalHeight;
-  const aspect = w / h;
+  const crop = trim ? computeCrop(source, w, h) : { sx: 0, sy: 0, sw: w, sh: h };
+  const aspect = crop.sw / crop.sh;
   const lineHeight = LINE_HEIGHTS[spacing] ?? LINE_HEIGHTS.normal;
 
   // Each emoji cell is ~1 wide and ~lineHeight tall once pasted, so divide the
@@ -88,7 +150,7 @@ export function imageToEmoji(source, opts) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.clearRect(0, 0, cols, rows);
-  ctx.drawImage(source, 0, 0, cols, rows);
+  ctx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, cols, rows);
 
   const img = ctx.getImageData(0, 0, cols, rows);
   const data = img.data;

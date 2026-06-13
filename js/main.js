@@ -17,6 +17,7 @@ const els = {
   palette: $('palette'),
   paletteWarn: $('paletteWarn'),
   spacing: $('spacing'),
+  trim: $('trim'),
   dither: $('dither'),
   autoContrast: $('autoContrast'),
   invert: $('invert'),
@@ -38,6 +39,7 @@ function readOpts() {
     cols: +els.cols.value,
     mode: [...els.mode].find((r) => r.checked).value,
     palette: els.palette.value,
+    trim: els.trim.checked,
     dither: els.dither.checked,
     autoContrast: els.autoContrast.checked,
     invert: els.invert.checked,
@@ -128,7 +130,7 @@ window.addEventListener('paste', (e) => {
 // ── Controls ──────────────────────────────────────────────
 [
   ...els.mode,
-  els.cols, els.palette, els.spacing, els.dither,
+  els.cols, els.palette, els.spacing, els.trim, els.dither,
   els.autoContrast, els.invert, els.background,
 ].forEach((el) => el.addEventListener('input', scheduleRender));
 

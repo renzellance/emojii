@@ -110,6 +110,22 @@ select {
 }
 .segmented input:checked + span { border-color: var(--accent); background: #2a2f12; }
 
+.presets { display: flex; gap: 6px; margin: 6px 0 10px; }
+.presets button {
+  flex: 1;
+  padding: 7px 4px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.presets button:hover { border-color: var(--accent-2); }
+
+.toggles { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.toggles .check { margin-top: 0; }
+
 .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 0.95rem; }
 .advanced { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 8px; }
 .advanced summary { cursor: pointer; color: var(--muted); padding: 6px 0; }

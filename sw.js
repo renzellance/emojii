@@ -1,5 +1,5 @@
 // Minimal offline cache for the app shell. Bump CACHE on releases.
-const CACHE = 'emojii-v1';
+const CACHE = 'emojii-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './js/converter.js',
   './js/palettes.js',
   './js/color.js',
+  './js/sampler.js',
   './assets/icon.svg',
   './manifest.webmanifest',
 ];

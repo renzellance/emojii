@@ -10,19 +10,17 @@ const els = {
   fileInput: $('fileInput'),
   sampleBtn: $('sampleBtn'),
   mode: document.querySelectorAll('input[name="mode"]'),
+  presets: document.querySelectorAll('.presets button'),
   cols: $('cols'),
   colsOut: $('colsOut'),
   wrapWarning: $('wrapWarning'),
   palette: $('palette'),
-  ramp: $('ramp'),
-  brightness: $('brightness'),
-  brightnessOut: $('brightnessOut'),
-  contrast: $('contrast'),
-  contrastOut: $('contrastOut'),
-  stretch: $('stretch'),
-  stretchOut: $('stretchOut'),
-  background: $('background'),
+  paletteWarn: $('paletteWarn'),
+  spacing: $('spacing'),
+  dither: $('dither'),
+  autoContrast: $('autoContrast'),
   invert: $('invert'),
+  background: $('background'),
   output: $('output'),
   dims: $('dims'),
   zoom: $('zoom'),
@@ -32,7 +30,7 @@ const els = {
   copyFallback: $('copyFallback'),
 };
 
-let currentImage = null; // HTMLImageElement once loaded
+let currentImage = null;
 let currentText = '';
 
 function readOpts() {
@@ -40,22 +38,18 @@ function readOpts() {
     cols: +els.cols.value,
     mode: [...els.mode].find((r) => r.checked).value,
     palette: els.palette.value,
-    ramp: els.ramp.value,
-    brightness: +els.brightness.value,
-    contrast: +els.contrast.value,
-    stretch: +els.stretch.value,
+    dither: els.dither.checked,
+    autoContrast: els.autoContrast.checked,
     invert: els.invert.checked,
+    spacing: els.spacing.value,
     background: els.background.value,
   };
 }
 
 function syncOutputs(opts) {
   els.colsOut.value = opts.cols;
-  els.brightnessOut.value = opts.brightness;
-  els.contrastOut.value = opts.contrast;
-  els.stretchOut.value = opts.stretch.toFixed(2);
-  els.wrapWarning.classList.toggle('hidden', opts.cols <= 24);
-  // Show only the controls relevant to the active mode.
+  els.wrapWarning.classList.toggle('hidden', opts.cols <= 28);
+  els.paletteWarn.classList.toggle('hidden', opts.palette !== 'expanded');
   document.querySelectorAll('[data-only]').forEach((el) => {
     el.classList.toggle('hidden', el.dataset.only !== opts.mode);
   });
@@ -66,15 +60,17 @@ function render() {
   syncOutputs(opts);
   if (!currentImage) return;
 
-  const { text, cols, rows } = imageToEmoji(currentImage, opts);
+  const { text, cols, rows, lineHeight } = imageToEmoji(currentImage, opts);
   currentText = text;
   els.output.textContent = text;
+  // Match the preview's line-height to the chosen chat spacing so the preview
+  // looks like what will actually paste (WYSIWYG).
+  els.output.style.lineHeight = lineHeight;
   els.dims.textContent = `${cols} × ${rows} = ${cols * rows} emoji`;
   els.copyBtn.disabled = false;
   els.downloadBtn.disabled = false;
 }
 
-// Debounce so dragging a slider doesn't thrash on big-ish grids.
 let raf = 0;
 function scheduleRender() {
   cancelAnimationFrame(raf);
@@ -129,12 +125,19 @@ window.addEventListener('paste', (e) => {
   if (item) loadFile(item.getAsFile());
 });
 
-// ── Controls re-render ────────────────────────────────────
+// ── Controls ──────────────────────────────────────────────
 [
   ...els.mode,
-  els.cols, els.palette, els.ramp, els.brightness, els.contrast,
-  els.stretch, els.background, els.invert,
+  els.cols, els.palette, els.spacing, els.dither,
+  els.autoContrast, els.invert, els.background,
 ].forEach((el) => el.addEventListener('input', scheduleRender));
+
+els.presets.forEach((btn) =>
+  btn.addEventListener('click', () => {
+    els.cols.value = btn.dataset.cols;
+    scheduleRender();
+  })
+);
 
 els.zoom.addEventListener('input', () => {
   els.output.style.fontSize = `${els.zoom.value}px`;
@@ -148,7 +151,6 @@ async function copyText() {
     await navigator.clipboard.writeText(currentText);
     flashCopied();
   } catch {
-    // Fallback for older / insecure-context browsers.
     els.copyFallback.value = currentText;
     els.copyFallback.select();
     try {
@@ -206,5 +208,4 @@ if ('serviceWorker' in navigator) {
   );
 }
 
-// Initial UI sync (no image yet).
 syncOutputs(readOpts());

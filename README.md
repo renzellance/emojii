@@ -7,31 +7,49 @@ Upload (or drag, or paste) an image, pick a style, and copy a grid of emoji you
 can drop straight into iMessage, WhatsApp, Discord, Slack, Telegram, Instagram —
 anywhere that accepts text.
 
-## Why emoji instead of ASCII characters
+## How it gets ASCII-art quality
 
-ASCII art relies on monospace fonts so every character lines up. Emoji are an
-even better fit: on essentially every platform they render at a fixed, square
-footprint, so a grid of emoji holds its shape when pasted into a chat — *and*
-keeps colour. The two things that matter for cross-platform fidelity:
+Three things work together:
 
-1. **Width.** If a row is wider than the chat bubble it wraps and the art
-   breaks. Keep the width small (the app warns past 24). Narrow = safe on phones.
-2. **Emoji choice.** Only widely-supported, single-cell emoji are used (the
-   colour squares/circles are the safest). No flags, no skin-tone modifiers.
+1. **A width-matched palette (alignment).** Only emoji that share the same
+   character advance width keep their columns aligned when pasted. The large
+   colored squares are such a set — this is exactly why Wordle grids
+   (🟩🟨⬛⬜) line up perfectly in every app. The default **Squares** palette
+   sticks to them. Object emoji (🪨, 🌸, fruit…) have different widths and
+   shear the picture apart, so they're only in the opt-in **Expanded** palette.
+2. **Floyd–Steinberg dithering.** Nine colors sounds like nothing, but
+   diffusing each cell's rounding error into its neighbours turns a limited
+   palette into smooth, detailed tone — e.g. a grey screen becomes a fine
+   ⬛/⬜ stipple that reads as grey. This is the main quality lever.
+3. **Colors sampled from your device's emoji font.** At runtime each emoji is
+   rendered and its true average colour measured, so matching is accurate to
+   how *you* see them rather than to hand-typed guesses.
+
+Plus a chroma-weighted colour metric so near-neutral pixels prefer the neutral
+squares (clean greys instead of muddy coloured speckle), and auto-contrast.
+
+## The detail vs. chat-wrapping tradeoff
+
+Emoji are physically large, so a high-resolution grid is wide and will wrap in a
+narrow phone chat (wrapping breaks the art). The **Detail** presets and width
+slider let you choose: keep it ≤ ~28 wide for guaranteed phone-chat safety, or
+go wider for Discord / large screens. The **Row spacing** setting matches the
+art's proportions to your chat app's line height, and the preview mirrors it so
+what you see is what pastes.
 
 ## Two styles
 
-- **🎨 Color mosaic** — each cell becomes the emoji whose average colour is
-  nearest the image block. Recognisable pictures made of colored emoji.
-- **🌗 Brightness** — classic ASCII feel: image luminance mapped onto a
-  dark → light emoji ramp. Best for logos and silhouettes.
+- **🎨 Color mosaic** — dithered nearest-colour matching; recognisable pictures
+  made of colored emoji. The main mode.
+- **🌗 Brightness** — image luminance mapped onto a dark → light square ramp,
+  for a flatter, logo-friendly look.
 
 ## Features
 
 - 100% client-side — your image **never leaves your device** (private, offline-capable).
 - Drag-and-drop, click-to-browse, or paste an image from the clipboard.
-- Width, palette/ramp, brightness, contrast, vertical-stretch and invert controls.
-- Live preview with a zoom that doesn't affect the copied text.
+- Detail presets + width, palette, row-spacing, dithering, auto-contrast and invert controls.
+- WYSIWYG live preview with a zoom that doesn't affect the copied text.
 - One-tap **Copy** (with a fallback) and **Download .txt**.
 - Installable PWA, works offline.
 
@@ -60,9 +78,10 @@ root to **GitHub Pages** on every push to `main`. To enable it:
 index.html              # markup + controls
 css/styles.css          # styling (mobile-first, dark theme)
 js/main.js              # UI wiring, input handling, copy/download
-js/converter.js         # image → emoji grid engine (canvas)
-js/palettes.js          # emoji palettes + brightness ramps with colours
-js/color.js             # colour-distance / luminance / adjust helpers
+js/converter.js         # image → emoji grid engine (canvas + dithering)
+js/sampler.js           # measures real emoji colours from the device font
+js/palettes.js          # width-matched palettes + brightness ramp
+js/color.js             # luminance + chroma-weighted colour distance
 assets/icon.svg         # app icon
 manifest.webmanifest    # PWA manifest
 sw.js                   # offline service worker
@@ -70,6 +89,8 @@ sw.js                   # offline service worker
 
 ## Tweaking the palettes
 
-`js/palettes.js` holds every emoji with a representative average colour. Add an
-emoji + its approximate RGB to a palette and nearest-colour matching picks it up
-automatically. Stick to single-cell, widely-supported emoji for safe pasting.
+`js/palettes.js` defines each palette as a list of emoji with fallback RGB
+values (the runtime sampler re-measures them in the browser). Add an emoji to a
+palette and matching/dithering pick it up automatically. **For the paste-safe
+`squares` palette, only add emoji with the same character width** (the large
+colored squares) — mixing widths is what breaks column alignment in chats.

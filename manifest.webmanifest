@@ -1,0 +1,18 @@
+{
+  "name": "emojii — emoji art generator",
+  "short_name": "emojii",
+  "description": "Turn any image into copy-paste emoji art that works across every messaging app.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

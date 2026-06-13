@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1117" />
+  <meta name="description" content="Turn any image into copy-paste emoji art that works across every messaging app." />
+  <title>emojii — turn images into emoji art</title>
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="logo">emoji<span>ii</span></h1>
+    <p class="tagline">images → emoji art you can paste anywhere</p>
+  </header>
+
+  <main class="layout">
+    <!-- ── Input + controls ───────────────────────────── -->
+    <section class="panel controls" aria-label="Controls">
+      <div id="dropzone" class="dropzone" tabindex="0" role="button"
+           aria-label="Upload an image. Drag, click, or paste.">
+        <input id="fileInput" type="file" accept="image/*" hidden />
+        <div class="dropzone-inner">
+          <span class="dz-emoji">🖼️</span>
+          <p><strong>Drop an image</strong> here</p>
+          <p class="muted">or click to browse · or paste from clipboard</p>
+          <button id="sampleBtn" type="button" class="link-btn">Try a sample image</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="group-label">Style</span>
+        <div class="segmented" role="radiogroup" aria-label="Render mode">
+          <label><input type="radio" name="mode" value="mosaic" checked /><span>🎨 Color mosaic</span></label>
+          <label><input type="radio" name="mode" value="ramp" /><span>🌗 Brightness</span></label>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="row" for="cols">
+          <span>Width <small class="muted">(emoji per row)</small></span>
+          <output id="colsOut">18</output>
+        </label>
+        <input id="cols" type="range" min="6" max="48" value="18" />
+        <p id="wrapWarning" class="warn hidden">⚠️ Wide grids may wrap on narrow phone screens — keep it ≤ 24 for safest results.</p>
+      </div>
+
+      <div class="control-group" data-only="mosaic">
+        <label class="row" for="palette"><span>Palette</span></label>
+        <select id="palette">
+          <option value="full">Full colour (varied)</option>
+          <option value="squares">Squares only (cleanest)</option>
+          <option value="hearts">Hearts ♥</option>
+        </select>
+      </div>
+
+      <div class="control-group" data-only="ramp">
+        <label class="row" for="ramp"><span>Ramp</span></label>
+        <select id="ramp">
+          <option value="thermal">Thermal (dark → light)</option>
+          <option value="mono">Mono squares</option>
+          <option value="blocks">Bold blocks</option>
+        </select>
+      </div>
+
+      <details class="advanced">
+        <summary>Fine tuning</summary>
+        <div class="control-group">
+          <label class="row" for="brightness"><span>Brightness</span><output id="brightnessOut">0</output></label>
+          <input id="brightness" type="range" min="-100" max="100" value="0" />
+        </div>
+        <div class="control-group">
+          <label class="row" for="contrast"><span>Contrast</span><output id="contrastOut">0</output></label>
+          <input id="contrast" type="range" min="-100" max="100" value="0" />
+        </div>
+        <div class="control-group">
+          <label class="row" for="stretch"><span>Vertical stretch</span><output id="stretchOut">1.00</output></label>
+          <input id="stretch" type="range" min="0.6" max="1.4" step="0.02" value="1.0" />
+        </div>
+        <div class="control-group">
+          <label class="row" for="background"><span>Transparent areas</span></label>
+          <select id="background">
+            <option value="white">⬜ White</option>
+            <option value="black">⬛ Black</option>
+            <option value="blank">␣ Blank space</option>
+            <option value="keep">Don't treat as transparent</option>
+          </select>
+        </div>
+        <label class="check"><input id="invert" type="checkbox" /> Invert colours</label>
+      </details>
+    </section>
+
+    <!-- ── Output ─────────────────────────────────────── -->
+    <section class="panel output-panel" aria-label="Result">
+      <div class="output-toolbar">
+        <span id="dims" class="muted">—</span>
+        <div class="spacer"></div>
+        <label class="zoom" title="Preview size only — does not change copied text">
+          🔍 <input id="zoom" type="range" min="8" max="28" value="15" />
+        </label>
+      </div>
+
+      <div class="output-wrap">
+        <pre id="output" class="output" aria-live="polite">Upload an image to begin.</pre>
+      </div>
+
+      <div class="actions">
+        <button id="copyBtn" type="button" class="primary" disabled>📋 Copy</button>
+        <button id="downloadBtn" type="button" disabled>⬇️ Download .txt</button>
+      </div>
+      <p id="copyHint" class="hint muted"></p>
+    </section>
+  </main>
+
+  <footer class="foot muted">
+    <p>Everything runs in your browser — your image never leaves your device.</p>
+  </footer>
+
+  <textarea id="copyFallback" aria-hidden="true" tabindex="-1"></textarea>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

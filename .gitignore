@@ -1,0 +1,9 @@
+# macOS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Nothing to build — this is a zero-dependency static site.
+node_modules/
